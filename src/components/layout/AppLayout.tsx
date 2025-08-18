@@ -13,8 +13,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        
         <div className="flex-1 flex flex-col">
           {/* Header */}
           <header className="h-16 border-b border-border bg-card shadow-soft">
@@ -57,6 +55,8 @@ export function AppLayout({ children }: AppLayoutProps) {
             {children}
           </main>
         </div>
+        
+        <AppSidebar />
       </div>
     </SidebarProvider>
   )
