@@ -13,27 +13,28 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
+        <AppSidebar />
         <div className="flex-1 flex flex-col">
           {/* Header */}
           <header className="h-16 border-b border-border bg-card shadow-soft">
             <div className="flex items-center justify-between h-full px-4">
               <div className="flex items-center gap-4">
-                <SidebarTrigger className="ml-2" />
                 <div className="relative w-96 max-w-sm">
                   <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input 
-                    placeholder="بحث في النظام..." 
+                  <Input
+                    placeholder="بحث في النظام..."
                     className="pr-10 bg-muted/50 border-muted"
                   />
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
+                <SidebarTrigger className="mr-2" />
                 <Button variant="ghost" size="sm" className="relative">
                   <Bell className="h-4 w-4" />
                   <span className="absolute -top-1 -right-1 h-2 w-2 bg-destructive rounded-full"></span>
                 </Button>
-                
+
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="/api/placeholder/32/32" alt="صورة المستخدم" />
@@ -55,8 +56,6 @@ export function AppLayout({ children }: AppLayoutProps) {
             {children}
           </main>
         </div>
-        
-        <AppSidebar />
       </div>
     </SidebarProvider>
   )

@@ -141,4 +141,13 @@
   .transition-smooth {
     transition: var(--transition-smooth);
   }
+
+  /* Right sidebar specific adjustments */
+  [data-side="right"] {
+    direction: rtl;
+  }
+
+  [data-side="right"] .sidebar-content {
+    direction: ltr;
+  }
 }

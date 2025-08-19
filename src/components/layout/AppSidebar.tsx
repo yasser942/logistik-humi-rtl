@@ -1,12 +1,12 @@
 import { useState } from "react"
-import { 
-  LayoutDashboard, 
-  Users, 
-  Clock, 
-  Calendar, 
-  DollarSign, 
-  Bell, 
-  FileText, 
+import {
+  LayoutDashboard,
+  Users,
+  Clock,
+  Calendar,
+  DollarSign,
+  Bell,
+  FileText,
   Settings,
   Truck,
   Package
@@ -53,12 +53,12 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+    isActive
+      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
       : "hover:bg-sidebar-accent/50 text-sidebar-foreground hover:text-sidebar-accent-foreground"
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
+    <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon" side="right">
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center space-x-2 space-x-reverse">
           <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
@@ -73,7 +73,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-4">
+      <SidebarContent className="py-4 sidebar-content">
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-medium px-3 mb-2">
             {!collapsed && "القوائم الرئيسية"}
@@ -83,9 +83,9 @@ export function AppSidebar() {
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
+                    <NavLink
+                      to={item.url}
+                      end
                       className={getNavCls}
                     >
                       <item.icon className="ml-2 h-4 w-4" />
@@ -107,9 +107,9 @@ export function AppSidebar() {
               {logisticsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
+                    <NavLink
+                      to={item.url}
+                      end
                       className={getNavCls}
                     >
                       <item.icon className="ml-2 h-4 w-4" />
@@ -131,9 +131,9 @@ export function AppSidebar() {
               {businessItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
+                    <NavLink
+                      to={item.url}
+                      end
                       className={getNavCls}
                     >
                       <item.icon className="ml-2 h-4 w-4" />
