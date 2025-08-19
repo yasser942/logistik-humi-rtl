@@ -60,12 +60,12 @@ export function AppSidebar() {
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon" side="right">
       <SidebarHeader className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center space-x-2 space-x-reverse">
+        <div className="flex items-center justify-end space-x-reverse-2 space-x-2">
           <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
             <Truck className="w-5 h-5 text-sidebar-primary-foreground" />
           </div>
           {!collapsed && (
-            <div>
+            <div className="text-right">
               <h2 className="text-lg font-bold text-sidebar-primary">الخدمات اللوجستية</h2>
               <p className="text-xs text-sidebar-foreground opacity-70">نظام إدارة الموارد البشرية</p>
             </div>
@@ -75,7 +75,7 @@ export function AppSidebar() {
 
       <SidebarContent className="py-4 sidebar-content">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-medium px-3 mb-2">
+          <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-medium pr-4 pl-3 mb-2 text-right flex justify-end">
             {!collapsed && "القوائم الرئيسية"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -88,8 +88,8 @@ export function AppSidebar() {
                       end
                       className={getNavCls}
                     >
-                      <item.icon className="ml-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && <span className="text-right flex-1">{item.title}</span>}
+                      <item.icon className="mr-2 h-4 w-4" />
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -99,7 +99,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-medium px-3 mb-2">
+          <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-medium pr-4 pl-3 mb-2 text-right flex justify-end">
             {!collapsed && "العمليات اللوجستية"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -112,8 +112,8 @@ export function AppSidebar() {
                       end
                       className={getNavCls}
                     >
-                      <item.icon className="ml-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && <span className="text-right flex-1">{item.title}</span>}
+                      <item.icon className="mr-2 h-4 w-4" />
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -123,7 +123,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-medium px-3 mb-2">
+          <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-medium pr-4 pl-3 mb-2 text-right flex justify-end">
             {!collapsed && "الإدارة والتقارير"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -136,8 +136,8 @@ export function AppSidebar() {
                       end
                       className={getNavCls}
                     >
-                      <item.icon className="ml-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && <span className="text-right flex-1">{item.title}</span>}
+                      <item.icon className="mr-2 h-4 w-4" />
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
