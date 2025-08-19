@@ -6,8 +6,11 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Truck, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { Link } from "react-router-dom"
+import { useAuth } from "@/hooks/useAuth"
+import { toast } from "sonner"
 
 export default function Login() {
+  const { login, isLoading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -15,10 +18,15 @@ export default function Login() {
     rememberMe: false
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement login logic
-    console.log('Login attempt:', formData)
+
+    try {
+      await login(formData.email, formData.password)
+      toast.success('تم تسجيل الدخول بنجاح')
+    } catch (error: any) {
+      toast.error(error.message || 'فشل في تسجيل الدخول')
+    }
   }
 
   return (
@@ -95,10 +103,10 @@ export default function Login() {
               {/* Remember Me & Forgot Password */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox 
+                  <Checkbox
                     id="remember"
                     checked={formData.rememberMe}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       setFormData(prev => ({ ...prev, rememberMe: checked as boolean }))
                     }
                   />
@@ -106,8 +114,8 @@ export default function Login() {
                     تذكرني
                   </Label>
                 </div>
-                <Link 
-                  to="/forgot-password" 
+                <Link
+                  to="/forgot-password"
                   className="text-sm text-primary hover:text-primary/80 transition-colors"
                 >
                   نسيت كلمة المرور؟
@@ -115,11 +123,12 @@ export default function Login() {
               </div>
 
               {/* Login Button */}
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
+                disabled={isLoading}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2.5"
               >
-                تسجيل الدخول
+                {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
               </Button>
 
               {/* Divider */}
@@ -136,8 +145,8 @@ export default function Login() {
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
                   ليس لديك حساب؟{' '}
-                  <Link 
-                    to="/register" 
+                  <Link
+                    to="/register"
                     className="text-primary hover:text-primary/80 font-medium transition-colors"
                   >
                     إنشاء حساب جديد

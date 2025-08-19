@@ -9,9 +9,11 @@ import {
   FileText,
   Settings,
   Truck,
-  Package
+  Package,
+  LogOut
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
+import { useAuth } from "@/hooks/useAuth"
 
 import {
   Sidebar,
@@ -48,6 +50,7 @@ const businessItems = [
 export function AppSidebar() {
   const { state } = useSidebar()
   const location = useLocation()
+  const { logout } = useAuth()
   const currentPath = location.pathname
   const collapsed = state === "collapsed"
 
@@ -142,6 +145,23 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Logout Section */}
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={logout}
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  {!collapsed && <span className="text-right flex-1">تسجيل الخروج</span>}
+                  <LogOut className="mr-2 h-4 w-4" />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

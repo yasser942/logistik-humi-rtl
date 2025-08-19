@@ -1,9 +1,62 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "./AppSidebar"
-import { Bell, Search, User } from "lucide-react"
+import { Bell, Search, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useAuth } from "@/hooks/useAuth"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
+function UserDropdown() {
+  const { user, hrEmployee, logout } = useAuth();
+
+  const getUserInitials = (name: string) => {
+    return name.split(' ').map(word => word[0]).join('').slice(0, 2);
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="flex items-center gap-2 p-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src="/api/placeholder/32/32" alt="صورة المستخدم" />
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+              {user ? getUserInitials(user.name) : 'م'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="hidden md:block text-sm text-right">
+            <p className="font-medium">{user?.name || 'مستخدم'}</p>
+            <p className="text-xs text-muted-foreground">
+              {hrEmployee?.position || 'موظف'}
+            </p>
+          </div>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{user?.name}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {user?.email}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={logout} className="text-destructive">
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>تسجيل الخروج</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -35,18 +88,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   <span className="absolute -top-1 -right-1 h-2 w-2 bg-destructive rounded-full"></span>
                 </Button>
 
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/api/placeholder/32/32" alt="صورة المستخدم" />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                      أح
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="hidden md:block text-sm">
-                    <p className="font-medium">أحمد محمد</p>
-                    <p className="text-xs text-muted-foreground">مدير الموارد البشرية</p>
-                  </div>
-                </div>
+                <UserDropdown />
               </div>
             </div>
           </header>

@@ -1,0 +1,158 @@
+import axios from 'axios';
+
+// Create axios instance with base configuration
+const api = axios.create({
+    baseURL: import.meta.env.VITE_API_URL || 'http://192.168.1.109:8000/api',
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    },
+});
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('hr_token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Response interceptor to handle common errors
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Token expired or invalid, redirect to login
+            localStorage.removeItem('hr_token');
+            localStorage.removeItem('hr_user');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
+// HR Authentication API
+export const hrAuthAPI = {
+    login: async (credentials: { email: string; password: string }) => {
+        const response = await api.post('/hr/login', credentials);
+        return response.data;
+    },
+
+    logout: async () => {
+        const response = await api.post('/hr/logout');
+        return response.data;
+    },
+
+    me: async () => {
+        const response = await api.get('/hr/me');
+        return response.data;
+    },
+
+    refresh: async () => {
+        const response = await api.post('/hr/refresh');
+        return response.data;
+    },
+};
+
+// HR Employees API
+export const hrEmployeesAPI = {
+    getAll: async (params?: any) => {
+        const response = await api.get('/hr/employees', { params });
+        return response.data;
+    },
+
+    getById: async (id: string) => {
+        const response = await api.get(`/hr/employees/${id}`);
+        return response.data;
+    },
+
+    create: async (data: any) => {
+        const response = await api.post('/hr/employees', data);
+        return response.data;
+    },
+
+    update: async (id: string, data: any) => {
+        const response = await api.put(`/hr/employees/${id}`, data);
+        return response.data;
+    },
+
+    delete: async (id: string) => {
+        const response = await api.delete(`/hr/employees/${id}`);
+        return response.data;
+    },
+};
+
+// HR Departments API
+export const hrDepartmentsAPI = {
+    getAll: async () => {
+        const response = await api.get('/hr/departments');
+        return response.data;
+    },
+
+    getById: async (id: string) => {
+        const response = await api.get(`/hr/departments/${id}`);
+        return response.data;
+    },
+};
+
+// HR Positions API
+export const hrPositionsAPI = {
+    getAll: async () => {
+        const response = await api.get('/hr/positions');
+        return response.data;
+    },
+
+    getById: async (id: string) => {
+        const response = await api.get(`/hr/positions/${id}`);
+        return response.data;
+    },
+};
+
+// HR Attendance API
+export const hrAttendanceAPI = {
+    getAll: async (params?: any) => {
+        const response = await api.get('/hr/attendances', { params });
+        return response.data;
+    },
+
+    checkIn: async (data: any) => {
+        const response = await api.post('/hr/attendances/check-in', data);
+        return response.data;
+    },
+
+    checkOut: async (data: any) => {
+        const response = await api.post('/hr/attendances/check-out', data);
+        return response.data;
+    },
+};
+
+// HR Leave Requests API
+export const hrLeaveRequestsAPI = {
+    getAll: async (params?: any) => {
+        const response = await api.get('/hr/leave-requests', { params });
+        return response.data;
+    },
+
+    create: async (data: any) => {
+        const response = await api.post('/hr/leave-requests', data);
+        return response.data;
+    },
+
+    approve: async (id: string, data: any) => {
+        const response = await api.post(`/hr/leave-requests/${id}/approve`, data);
+        return response.data;
+    },
+
+    reject: async (id: string, data: any) => {
+        const response = await api.post(`/hr/leave-requests/${id}/reject`, data);
+        return response.data;
+    },
+};
+
+export default api; 
