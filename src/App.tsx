@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
 import Attendance from "./pages/Attendance";
 import Departments from "./pages/Departments";
+import Positions from "./pages/Positions";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -51,6 +52,11 @@ const App = () => (
             <Route path="/departments" element={
               <ProtectedRoute requiredPermissions={['can_manage_departments']}>
                 <Departments />
+              </ProtectedRoute>
+            } />
+            <Route path="/positions" element={
+              <ProtectedRoute requiredPermissions={['can_manage_positions']}>
+                <Positions />
               </ProtectedRoute>
             } />
             <Route path="/shifts" element={

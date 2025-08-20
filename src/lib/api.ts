@@ -149,6 +149,27 @@ export const hrPositionsAPI = {
         const response = await api.get(`/hr/positions/${id}`);
         return response.data;
     },
+
+    create: async (data: any) => {
+        const response = await api.post('/hr/positions', data);
+        return response.data;
+    },
+
+    update: async (id: string, data: any) => {
+        const response = await api.put(`/hr/positions/${id}`, data);
+        return response.data;
+    },
+
+    delete: async (id: string) => {
+        const response = await api.delete(`/hr/positions/${id}`);
+        return response.data;
+    },
+
+    // Get positions with pagination and search
+    getPaginated: async (params?: any) => {
+        const response = await api.get('/hr/positions', { params });
+        return response.data;
+    },
 };
 
 // HR Attendance API

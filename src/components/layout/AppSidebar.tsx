@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Users,
   Building2,
+  Briefcase,
   Clock,
   Calendar,
   DollarSign,
@@ -33,6 +34,7 @@ const mainItems = [
   { title: "لوحة التحكم", url: "/", icon: LayoutDashboard },
   { title: "إدارة الموظفين", url: "/employees", icon: Users },
   { title: "إدارة الأقسام", url: "/departments", icon: Building2 },
+  { title: "إدارة المناصب", url: "/positions", icon: Briefcase },
   { title: "الحضور والانصراف", url: "/attendance", icon: Clock },
   { title: "جدولة المناوبات", url: "/shifts", icon: Calendar },
 ]
