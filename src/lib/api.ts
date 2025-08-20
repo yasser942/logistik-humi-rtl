@@ -101,6 +101,22 @@ export const hrDepartmentsAPI = {
     },
 };
 
+// HR Cities API
+export const hrCitiesAPI = {
+    getAll: async () => {
+        const response = await api.get('/hr/cities');
+        return response.data;
+    },
+};
+
+// HR Branches API
+export const hrBranchesAPI = {
+    getAll: async () => {
+        const response = await api.get('/hr/branches');
+        return response.data;
+    },
+};
+
 // HR Positions API
 export const hrPositionsAPI = {
     getAll: async () => {
