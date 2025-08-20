@@ -99,6 +99,27 @@ export const hrDepartmentsAPI = {
         const response = await api.get(`/hr/departments/${id}`);
         return response.data;
     },
+
+    create: async (data: any) => {
+        const response = await api.post('/hr/departments', data);
+        return response.data;
+    },
+
+    update: async (id: string, data: any) => {
+        const response = await api.put(`/hr/departments/${id}`, data);
+        return response.data;
+    },
+
+    delete: async (id: string) => {
+        const response = await api.delete(`/hr/departments/${id}`);
+        return response.data;
+    },
+
+    // Get departments with pagination and search
+    getPaginated: async (params?: any) => {
+        const response = await api.get('/hr/departments', { params });
+        return response.data;
+    },
 };
 
 // HR Cities API

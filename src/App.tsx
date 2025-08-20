@@ -9,6 +9,7 @@ import AuthenticatedRoute from "./components/AuthenticatedRoute";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
 import Attendance from "./pages/Attendance";
+import Departments from "./pages/Departments";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -19,9 +20,14 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true
+        }}
+      >
         <AuthProvider>
-        <Routes>
+          <Routes>
             <Route path="/login" element={
               <AuthenticatedRoute>
                 <Login />
@@ -40,6 +46,11 @@ const App = () => (
             <Route path="/attendance" element={
               <ProtectedRoute requiredPermissions={['can_manage_attendance']}>
                 <Attendance />
+              </ProtectedRoute>
+            } />
+            <Route path="/departments" element={
+              <ProtectedRoute requiredPermissions={['can_manage_departments']}>
+                <Departments />
               </ProtectedRoute>
             } />
             <Route path="/shifts" element={
@@ -66,9 +77,9 @@ const App = () => (
                 </div>
               </ProtectedRoute>
             } />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

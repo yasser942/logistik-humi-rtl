@@ -2,6 +2,7 @@ import { useState } from "react"
 import {
   LayoutDashboard,
   Users,
+  Building2,
   Clock,
   Calendar,
   DollarSign,
@@ -31,6 +32,7 @@ import {
 const mainItems = [
   { title: "لوحة التحكم", url: "/", icon: LayoutDashboard },
   { title: "إدارة الموظفين", url: "/employees", icon: Users },
+  { title: "إدارة الأقسام", url: "/departments", icon: Building2 },
   { title: "الحضور والانصراف", url: "/attendance", icon: Clock },
   { title: "جدولة المناوبات", url: "/shifts", icon: Calendar },
 ]
