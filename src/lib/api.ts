@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://192.168.1.109:8000/api',
+    baseURL: import.meta.env.VITE_API_URL || 'https://guba-sy.com/api',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -64,6 +64,12 @@ export const hrAuthAPI = {
 export const hrEmployeesAPI = {
     getAll: async (params?: any) => {
         const response = await api.get('/hr/employees', { params });
+        return response.data;
+    },
+
+    // Get employees for mobile app (public access)
+    getMobileEmployees: async () => {
+        const response = await api.get('/hr/employees/mobile');
         return response.data;
     },
 
@@ -138,6 +144,58 @@ export const hrBranchesAPI = {
     },
 };
 
+// HR Attendance API
+export const hrAttendanceAPI = {
+    // Admin/Web Dashboard
+    getAll: async (params?: any) => {
+        const response = await api.get('/hr/attendances', { params });
+        return response.data;
+    },
+
+    getById: async (id: string) => {
+        const response = await api.get(`/hr/attendances/${id}`);
+        return response.data;
+    },
+
+    update: async (id: string, data: any) => {
+        const response = await api.put(`/hr/attendances/${id}`, data);
+        return response.data;
+    },
+
+    delete: async (id: string) => {
+        const response = await api.delete(`/hr/attendances/${id}`);
+        return response.data;
+    },
+
+    getStatistics: async (params?: any) => {
+        const response = await api.get('/hr/attendances/statistics', { params });
+        return response.data;
+    },
+
+    // Mobile App Integration
+    checkIn: async (data: any) => {
+        const response = await api.post('/hr/attendance/checkin', data);
+        return response.data;
+    },
+
+    checkOut: async (data: any) => {
+        const response = await api.post('/hr/attendance/checkout', data);
+        return response.data;
+    },
+
+    getCurrentStatus: async (employeeId: string) => {
+        const response = await api.get('/hr/attendance/status', { params: { employee_id: employeeId } });
+        return response.data;
+    },
+
+    getEmployeeHistory: async (employeeId: string, params?: any) => {
+        const response = await api.get('/hr/attendance/history', {
+            params: { employee_id: employeeId, ...params }
+        });
+        return response.data;
+    },
+};
+
 // HR Positions API
 export const hrPositionsAPI = {
     getAll: async () => {
@@ -172,28 +230,10 @@ export const hrPositionsAPI = {
     },
 };
 
-// HR Attendance API
-export const hrAttendanceAPI = {
-    getAll: async (params?: any) => {
-        const response = await api.get('/hr/attendances', { params });
-        return response.data;
-    },
-
-    checkIn: async (data: any) => {
-        const response = await api.post('/hr/attendances/check-in', data);
-        return response.data;
-    },
-
-    checkOut: async (data: any) => {
-        const response = await api.post('/hr/attendances/check-out', data);
-        return response.data;
-    },
-};
-
 // HR Leave Requests API
 export const hrLeaveRequestsAPI = {
-    getAll: async (params?: any) => {
-        const response = await api.get('/hr/leave-requests', { params });
+    getAll: async () => {
+        const response = await api.get('/hr/leave-requests');
         return response.data;
     },
 
