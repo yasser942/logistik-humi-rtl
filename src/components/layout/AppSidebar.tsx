@@ -68,12 +68,12 @@ export function AppSidebar() {
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon" side="right">
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center justify-end space-x-reverse-2 space-x-2">
-          <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
-            <Truck className="w-5 h-5 text-sidebar-primary-foreground" />
+          <div className="w-16 h-16 flex items-center justify-center">
+            <img src="/img2.png" alt="شركة الفاتح" className="w-full h-full object-contain" />
           </div>
           {!collapsed && (
             <div className="text-right">
-              <h2 className="text-lg font-bold text-sidebar-primary">الخدمات اللوجستية</h2>
+              <h2 className="text-lg font-bold text-sidebar-primary">شركة الفاتح</h2>
               <p className="text-xs text-sidebar-foreground opacity-70">نظام إدارة الموارد البشرية</p>
             </div>
           )}
