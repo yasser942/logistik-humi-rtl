@@ -101,8 +101,55 @@ const formatDistance = (distance: number | null | undefined): string => {
   }
   if (distance < 1000) {
     return `${Math.round(distance)} متر`
+  } else {
+    return `${(distance / 1000).toFixed(1)} كم`
   }
-  return `${(distance / 1000).toFixed(2)} كم`
+}
+
+// Helper function to format date
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return 'غير محدد'
+
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return 'تاريخ غير صحيح'
+
+    return date.toLocaleDateString('ar-SA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  } catch (error) {
+    return 'تاريخ غير صحيح'
+  }
+}
+
+// Helper function to format time
+const formatTime = (timeString: string | null | undefined): string => {
+  if (!timeString) return 'لم يسجل'
+
+  try {
+    // Handle both "HH:mm:ss" and "HH:mm" formats
+    let time = timeString
+    if (timeString.includes('T')) {
+      // If it's a full datetime string
+      const date = new Date(timeString)
+      if (isNaN(date.getTime())) return 'وقت غير صحيح'
+      return date.toLocaleTimeString('ar-SA', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } else {
+      // If it's just a time string like "09:30:00" or "09:30"
+      const [hours, minutes] = timeString.split(':')
+      if (hours && minutes) {
+        return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`
+      }
+      return 'وقت غير صحيح'
+    }
+  } catch (error) {
+    return 'وقت غير صحيح'
+  }
 }
 
 // Helper function to get location status badge
@@ -290,9 +337,27 @@ export default function Attendance() {
   const [total, setTotal] = useState(0)
 
   useEffect(() => {
-    loadAttendances(1, false)
-    loadEmployees()
-    loadStatistics()
+    const initializeData = async () => {
+      setIsLoading(true)
+      try {
+        await Promise.all([
+          loadAttendances(1, false),
+          loadEmployees(),
+          loadStatistics()
+        ])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    initializeData()
+  }, []) // Empty dependency array for initial load only
+
+  // Separate useEffect for filters that should trigger reload
+  useEffect(() => {
+    if (attendances.length > 0) { // Only reload if we already have data
+      loadAttendances(1, false)
+    }
   }, [searchTerm, selectedEmployee, dateFrom, dateTo, statusFilter, perPage])
 
   // Ensure currentPage is valid when totalPages changes
@@ -303,8 +368,10 @@ export default function Attendance() {
   }, [totalPages, currentPage])
 
   const handlePageChange = async (page: number) => {
+    setIsPaginationLoading(true)
     setCurrentPage(page)
-    await loadAttendances(page, true)
+    await loadAttendances(page, false)
+    setIsPaginationLoading(false)
   }
 
   const handlePerPageChange = async (newPerPage: number) => {
@@ -313,39 +380,82 @@ export default function Attendance() {
     await loadAttendances(1, true)
   }
 
-  const loadAttendances = async (page = currentPage, isPagination = false) => {
+  const loadAttendances = async (page: number = 1, showLoading: boolean = true) => {
+    if (showLoading) {
+      setIsLoading(true)
+    }
+
     try {
-      if (isPagination) {
-        setIsPaginationLoading(true)
-      } else {
-        setIsLoading(true)
+      // Check if user is authenticated
+      const token = localStorage.getItem('hr_token')
+      if (!token) {
+        console.error('No authentication token found')
+        toast.error('يرجى تسجيل الدخول أولاً')
+        setAttendances([])
+        setTotalPages(1)
+        return
+      }
+
+      // Test API connectivity first
+      try {
+        const healthResponse = await fetch('/api/hr/health')
+        console.log('Health check response:', healthResponse.status)
+      } catch (healthError) {
+        console.error('Health check failed:', healthError)
+        toast.error('لا يمكن الاتصال بالخادم، يرجى التحقق من الاتصال')
+        setAttendances([])
+        setTotalPages(1)
+        return
       }
 
       const params: any = {
-        search: searchTerm,
-        page: page,
+        page,
         per_page: perPage
       }
 
+      if (searchTerm) params.search = searchTerm
       if (selectedEmployee) params.employee_id = selectedEmployee
       if (dateFrom) params.date_from = dateFrom
       if (dateTo) params.date_to = dateTo
       if (statusFilter) params.status = statusFilter
 
-      const response = await hrAttendanceAPI.getAll(params)
+      console.log('Loading attendances with params:', params)
+      console.log('Using token:', token ? 'Token exists' : 'No token')
 
-      if (response.status === 'success') {
-        setAttendances(response.attendances || [])
-        setCurrentPage(response.pagination?.current_page || 1)
-        setTotalPages(response.pagination?.last_page || 1)
-        setTotal(response.pagination?.total || 0)
-      }
-    } catch (error) {
-      toast.error('فشل في تحميل بيانات الحضور')
-    } finally {
-      if (isPagination) {
-        setIsPaginationLoading(false)
+      const response = await hrAttendanceAPI.getAll(params)
+      console.log('API Response:', response)
+
+      // Debug: Log the first attendance record to see date formats
+      if (response.attendances && response.attendances.length > 0) {
+        console.log('Sample attendance record:', response.attendances[0])
+        console.log('Date format:', response.attendances[0].date)
+        console.log('Check-in time format:', response.attendances[0].check_in_time)
+        console.log('Check-out time format:', response.attendances[0].check_out_time)
       } else {
+        console.log('No attendances found in response')
+      }
+
+      setAttendances(response.attendances || [])
+      setTotalPages(response.pagination?.last_page || 1)
+      setCurrentPage(page)
+    } catch (error: any) {
+      console.error('Error loading attendances:', error)
+      console.error('Error details:', error.response?.data)
+      console.error('Error status:', error.response?.status)
+
+      if (error.response?.status === 401) {
+        toast.error('انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى')
+      } else if (error.response?.status === 403) {
+        toast.error('ليس لديك صلاحية للوصول إلى هذه الصفحة')
+      } else {
+        toast.error(error.response?.data?.msg || 'فشل في تحميل سجلات الحضور')
+      }
+
+      // Set empty data to prevent infinite loading
+      setAttendances([])
+      setTotalPages(1)
+    } finally {
+      if (showLoading) {
         setIsLoading(false)
       }
     }
@@ -848,7 +958,7 @@ export default function Attendance() {
                       <div className="p-4 bg-muted/30" style={{ direction: 'rtl' }}>
                         <div className="flex items-center gap-2 mb-3" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
                           <Calendar className="h-4 w-4 text-primary" />
-                          <span className="font-medium text-foreground">{attendance.date}</span>
+                          <span className="font-medium text-foreground">{formatDate(attendance.date)}</span>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -859,13 +969,7 @@ export default function Attendance() {
                               <CheckCircle className="h-4 w-4 text-green-600" />
                             </div>
                             <div className="text-lg font-bold text-green-800">
-                              {attendance.check_in_time ?
-                                new Date(attendance.check_in_time).toLocaleTimeString('ar-SA', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                }) :
-                                'لم يسجل'
-                              }
+                              {formatTime(attendance.check_in_time)}
                             </div>
                           </div>
 
@@ -876,13 +980,7 @@ export default function Attendance() {
                               <Clock className="h-4 w-4 text-blue-600" />
                             </div>
                             <div className="text-lg font-bold text-blue-800">
-                              {attendance.check_out_time ?
-                                new Date(attendance.check_out_time).toLocaleTimeString('ar-SA', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                }) :
-                                'لم يسجل'
-                              }
+                              {formatTime(attendance.check_out_time)}
                             </div>
                           </div>
 
@@ -1009,7 +1107,6 @@ export default function Attendance() {
                       <PaginationPrevious
                         onClick={() => handlePageChange(currentPage - 1)}
                         className={currentPage <= 1 || isPaginationLoading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                        disabled={currentPage <= 1 || isPaginationLoading}
                       />
                     </PaginationItem>
 
@@ -1064,7 +1161,6 @@ export default function Attendance() {
                       <PaginationNext
                         onClick={() => handlePageChange(currentPage + 1)}
                         className={currentPage >= totalPages || isPaginationLoading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                        disabled={currentPage >= totalPages || isPaginationLoading}
                       />
                     </PaginationItem>
                   </PaginationContent>
