@@ -20,7 +20,11 @@ import {
   AlertCircle,
   BarChart3,
   Download,
-  Filter
+  Filter,
+  Navigation,
+  Home,
+  Building2,
+  AlertTriangle
 } from "lucide-react"
 import { hrAttendanceAPI, hrEmployeesAPI } from "@/lib/api"
 import { toast } from "sonner"
@@ -64,6 +68,8 @@ interface Attendance {
     email: string
     department: { id: number; name: string } | null
     position: { id: number; title: string } | null
+    branch_id?: number
+    branch?: { id: number; name: string }
   }
   is_checked_in: boolean
   is_checked_out: boolean
@@ -76,6 +82,8 @@ interface Employee {
   email: string
   department: { id: number; name: string } | null
   position: { id: number; title: string } | null
+  branch_id?: number
+  branch?: { id: number; name: string }
 }
 
 // Helper function to safely format coordinates
@@ -84,6 +92,179 @@ const formatCoordinate = (coord: number | null | undefined): string => {
     return '0.000000'
   }
   return coord.toFixed(6)
+}
+
+// Helper function to format distance
+const formatDistance = (distance: number | null | undefined): string => {
+  if (distance === null || distance === undefined || typeof distance !== 'number') {
+    return 'غير محدد'
+  }
+  if (distance < 1000) {
+    return `${Math.round(distance)} متر`
+  }
+  return `${(distance / 1000).toFixed(2)} كم`
+}
+
+// Helper function to get location status badge
+const getLocationStatusBadge = (status: string, isAtAssignedBranch: boolean) => {
+  if (status === 'valid' && isAtAssignedBranch) {
+    return <Badge className="bg-green-600">في الفرع المخصص</Badge>
+  } else if (status === 'outside_radius' || !isAtAssignedBranch) {
+    return <Badge className="bg-orange-600">خارج الفرع المخصص</Badge>
+  } else if (status === 'unknown') {
+    return <Badge variant="outline">غير محدد</Badge>
+  }
+  return <Badge variant="outline">غير محدد</Badge>
+}
+
+// Helper function to render location information
+const renderLocationInfo = (attendance: Attendance) => {
+  if (!attendance.location) return null
+
+  const location = attendance.location
+  const hasCheckInLocation = location.name && location.address
+  const hasCheckOutLocation = location.checkout_name && location.checkout_address
+
+  return (
+    <div className="space-y-4" style={{ direction: 'rtl' }}>
+      {/* Check-in Location */}
+      {hasCheckInLocation && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3" style={{ direction: 'rtl' }}>
+          <div className="flex items-center gap-3 mb-3" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+            <div style={{ textAlign: 'right' }}>
+              <h5 className="text-sm font-semibold text-green-800">موقع تسجيل الدخول</h5>
+              <p className="text-xs text-green-600">Check-in Location</p>
+            </div>
+            <div className="p-2 bg-green-100 rounded-lg">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </div>
+          </div>
+
+          <div className="space-y-2 mr-8" style={{ textAlign: 'right' }}>
+            {/* Address */}
+            <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+              <span className="text-xs text-green-700">{location.address}</span>
+              <MapPin className="h-3 w-3 text-green-600" />
+            </div>
+
+            {/* Coordinates */}
+            {attendance.latitude && attendance.longitude && (
+              <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+                <span className="text-xs text-green-700 font-mono">
+                  {formatCoordinate(attendance.latitude)}, {formatCoordinate(attendance.longitude)}
+                </span>
+                <Navigation className="h-3 w-3 text-green-600" />
+              </div>
+            )}
+
+            {/* Device Info */}
+            {location.device_info && (
+              <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+                <span className="text-xs text-green-700">{location.device_info}</span>
+                <Smartphone className="h-3 w-3 text-green-600" />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Check-out Location */}
+      {hasCheckOutLocation && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3" style={{ direction: 'rtl' }}>
+          <div className="flex items-center gap-3 mb-3" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+            <div style={{ textAlign: 'right' }}>
+              <h5 className="text-sm font-semibold text-blue-800">موقع تسجيل الخروج</h5>
+              <p className="text-xs text-blue-600">Check-out Location</p>
+            </div>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Clock className="h-4 w-4 text-blue-600" />
+            </div>
+          </div>
+
+          <div className="space-y-2 mr-8" style={{ textAlign: 'right' }}>
+            {/* Address and Branch */}
+            <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+              <span className="text-xs text-blue-700">{location.checkout_address}</span>
+              {location.checkout_branch_name && (
+                <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                  {location.checkout_branch_name}
+                </span>
+              )}
+              <MapPin className="h-3 w-3 text-blue-600" />
+            </div>
+
+            {/* Location Status */}
+            <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end' }}>
+              <div className="flex items-center gap-2" style={{ flexDirection: 'row-reverse' }}>
+                {getLocationStatusBadge(
+                  location.checkout_location_status || 'unknown',
+                  location.checkout_is_at_assigned_branch || false
+                )}
+
+                {/* Warning if checked out outside assigned branch */}
+                {attendance.employee.branch_id && !location.checkout_is_at_assigned_branch && (
+                  <div className="flex items-center gap-1 text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full border border-orange-200" style={{ flexDirection: 'row-reverse' }}>
+                    <span>خارج الفرع المخصص</span>
+                    <AlertTriangle className="h-3 w-3" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Distance Information */}
+            {location.checkout_distance_from_branch && (
+              <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+                <span className="text-xs text-blue-700">
+                  المسافة: {formatDistance(location.checkout_distance_from_branch)}
+                </span>
+                <Navigation className="h-3 w-3 text-blue-600" />
+              </div>
+            )}
+
+            {/* Coordinates */}
+            {location.checkout_latitude && location.checkout_longitude && (
+              <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+                <span className="text-xs text-blue-700 font-mono">
+                  {formatCoordinate(location.checkout_latitude)}, {formatCoordinate(location.checkout_longitude)}
+                </span>
+                <Navigation className="h-3 w-3 text-blue-600" />
+              </div>
+            )}
+
+            {/* Device Info */}
+            {location.device_info && (
+              <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+                <span className="text-xs text-blue-700">{location.device_info}</span>
+                <Smartphone className="h-3 w-3 text-blue-600" />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Branch Assignment Info */}
+      {attendance.employee.branch && (
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3" style={{ direction: 'rtl' }}>
+          <div className="flex items-center gap-3 mb-3" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+            <div style={{ textAlign: 'right' }}>
+              <h5 className="text-sm font-semibold text-purple-800">الفرع المخصص</h5>
+              <p className="text-xs text-purple-600">Assigned Branch</p>
+            </div>
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Building2 className="h-4 w-4 text-purple-600" />
+            </div>
+          </div>
+
+          <div className="mr-8" style={{ textAlign: 'right' }}>
+            <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+              <span className="text-xs text-purple-700 font-medium">{attendance.employee.branch.name}</span>
+              <Home className="h-3 w-3 text-purple-600" />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function Attendance() {
@@ -237,8 +418,8 @@ export default function Attendance() {
     loadStatistics()
   }
 
-const getStatusBadge = (status: string) => {
-  switch (status) {
+  const getStatusBadge = (status: string) => {
+    switch (status) {
       case 'present':
         return <Badge className="bg-green-600">حاضر</Badge>
       case 'absent':
@@ -249,7 +430,7 @@ const getStatusBadge = (status: string) => {
         return <Badge className="bg-blue-600">إجازة</Badge>
       case 'half_day':
         return <Badge className="bg-orange-600">نصف يوم</Badge>
-    default:
+      default:
         return <Badge variant="outline">غير محدد</Badge>
     }
   }
@@ -288,22 +469,39 @@ const getStatusBadge = (status: string) => {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">نظام الحضور والانصراف</h1>
-            <p className="text-muted-foreground">إدارة حضور الموظفين وتتبع أوقات العمل</p>
+        <div className="flex items-center justify-between bg-gradient-to-r from-primary/5 to-primary/10 p-6 rounded-lg border border-primary/20">
+          <div className="text-right">
+            <h1 className="text-3xl font-bold text-foreground mb-2">نظام الحضور والانصراف</h1>
+            <p className="text-muted-foreground text-lg">إدارة حضور الموظفين وتتبع أوقات العمل مع مراقبة المواقع</p>
+            <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+              <span className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                تتبع المواقع
+              </span>
+              <span className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                إدارة الوقت
+              </span>
+              <span className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                إدارة الموظفين
+              </span>
+            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
               onClick={() => setIsMobileSimulatorOpen(true)}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 px-6 py-3 border-2 hover:bg-muted/50"
             >
-              <Smartphone className="h-4 w-4" />
+              <Smartphone className="h-5 w-5" />
               محاكاة التطبيق
             </Button>
-            <Button onClick={handleAddAttendance} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
+            <Button
+              onClick={handleAddAttendance}
+              className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90"
+            >
+              <Plus className="h-5 w-5" />
               إضافة سجل حضور
             </Button>
           </div>
@@ -312,69 +510,154 @@ const getStatusBadge = (status: string) => {
         {/* Statistics Cards */}
         {statistics && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
+            <Card className="hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">إجمالي الأيام</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{statistics.total_days}</div>
-            </CardContent>
-          </Card>
-            <Card>
+                <div className="text-2xl font-bold text-blue-600">{statistics.total_days}</div>
+                <p className="text-xs text-muted-foreground mt-1">Total Days</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">إجمالي الموظفين</CardTitle>
-                <User className="h-4 w-4 text-muted-foreground" />
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <User className="h-4 w-4 text-green-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{statistics.total_employees}</div>
-            </CardContent>
-          </Card>
-            <Card>
+                <div className="text-2xl font-bold text-green-600">{statistics.total_employees}</div>
+                <p className="text-xs text-muted-foreground mt-1">Total Employees</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">إجمالي ساعات العمل</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Clock className="h-4 w-4 text-purple-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{statistics.total_hours}</div>
-            </CardContent>
-          </Card>
-            <Card>
+                <div className="text-2xl font-bold text-purple-600">{statistics.total_hours}</div>
+                <p className="text-xs text-muted-foreground mt-1">Total Hours</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">متوسط ساعات العمل</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <BarChart3 className="h-4 w-4 text-orange-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{statistics.average_hours}</div>
-            </CardContent>
-          </Card>
-        </div>
+                <div className="text-2xl font-bold text-orange-600">{statistics.average_hours}</div>
+                <p className="text-xs text-muted-foreground mt-1">Average Hours</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Location Statistics */}
+        {attendances.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="hover:shadow-lg transition-shadow duration-200 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-green-800">تسجيلات مع مواقع</CardTitle>
+                <div className="p-2 bg-green-200 rounded-lg">
+                  <MapPin className="h-4 w-4 text-green-700" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-700">
+                  {attendances.filter(a => a.location).length}
+                </div>
+                <p className="text-xs text-green-600 mt-1">
+                  من أصل {attendances.length} تسجيل
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-200 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-blue-800">خروج من الفرع المخصص</CardTitle>
+                <div className="p-2 bg-blue-200 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-blue-700" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-700">
+                  {attendances.filter(a =>
+                    a.location?.checkout_is_at_assigned_branch === true
+                  ).length}
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  تسجيل خروج صحيح
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-200 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-orange-800">خروج خارج الفرع</CardTitle>
+                <div className="p-2 bg-orange-200 rounded-lg">
+                  <AlertTriangle className="h-4 w-4 text-orange-700" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-700">
+                  {attendances.filter(a =>
+                    a.location?.checkout_is_at_assigned_branch === false
+                  ).length}
+                </div>
+                <p className="text-xs text-orange-600 mt-1">
+                  تسجيل خروج من موقع آخر
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
+        <Card className="shadow-md border-2 border-border/20">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-border/30">
+            <CardTitle className="flex items-center gap-3 text-lg">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Filter className="h-5 w-5 text-primary" />
+              </div>
               فلاتر البحث
+              <span className="text-sm text-muted-foreground font-normal">Search Filters</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">البحث</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  البحث
+                </label>
                 <Input
                   placeholder="البحث في الموظفين..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  className="border-2 focus:border-primary transition-colors"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">الموظف</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  الموظف
+                </label>
                 <select
                   value={selectedEmployee}
                   onChange={(e) => setSelectedEmployee(e.target.value)}
-                  className="w-full border border-border rounded-md px-3 py-2 bg-background"
+                  className="w-full border-2 border-border rounded-md px-3 py-2 bg-background focus:border-primary transition-colors"
                 >
                   <option value="">جميع الموظفين</option>
                   {employees.map((employee) => (
@@ -385,27 +668,61 @@ const getStatusBadge = (status: string) => {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">من تاريخ</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  من تاريخ
+                </label>
                 <Input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
+                  className="border-2 focus:border-primary transition-colors"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">إلى تاريخ</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  إلى تاريخ
+                </label>
                 <Input
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
+                  className="border-2 focus:border-primary transition-colors"
                 />
               </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  حالة الموقع
+                </label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full border-2 border-border rounded-md px-3 py-2 bg-background focus:border-primary transition-colors"
+                >
+                  <option value="">جميع الحالات</option>
+                  <option value="with_location">مع بيانات موقع</option>
+                  <option value="at_assigned_branch">في الفرع المخصص</option>
+                  <option value="outside_branch">خارج الفرع المخصص</option>
+                  <option value="no_location">بدون بيانات موقع</option>
+                </select>
+              </div>
             </div>
-            <div className="flex gap-2 mt-4">
-              <Button onClick={clearFilters} variant="outline">
+            <div className="flex gap-3 mt-6 justify-end">
+              <Button
+                onClick={clearFilters}
+                variant="outline"
+                className="flex items-center gap-2 px-6 py-2 border-2 hover:bg-muted/50"
+              >
+                <XCircle className="h-4 w-4" />
                 مسح الفلاتر
               </Button>
-              <Button onClick={() => loadAttendances(1, false)}>
+              <Button
+                onClick={() => loadAttendances(1, false)}
+                className="flex items-center gap-2 px-6 py-2 bg-primary hover:bg-primary/90"
+              >
+                <Filter className="h-4 w-4" />
                 تطبيق الفلاتر
               </Button>
             </div>
@@ -414,103 +731,222 @@ const getStatusBadge = (status: string) => {
 
         {/* Attendance Records */}
         <Tabs defaultValue="list" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="list">قائمة الحضور</TabsTrigger>
-            <TabsTrigger value="mobile">محاكاة التطبيق</TabsTrigger>
           </TabsList>
 
           <TabsContent value="list" className="space-y-4">
+            {/* Filter Summary */}
+            {(searchTerm || selectedEmployee || dateFrom || dateTo || statusFilter) && (
+              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-md">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 text-sm text-blue-700 mb-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Filter className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span className="font-bold text-lg">الفلاتر المطبقة</span>
+                    <span className="text-blue-500">Applied Filters</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mr-12">
+                    {searchTerm && (
+                      <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 px-3 py-1">
+                        <Search className="h-3 w-3 mr-1" />
+                        بحث: {searchTerm}
+                      </Badge>
+                    )}
+                    {selectedEmployee && (
+                      <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 px-3 py-1">
+                        <User className="h-3 w-3 mr-1" />
+                        موظف: {employees.find(e => e.id.toString() === selectedEmployee)?.name || selectedEmployee}
+                      </Badge>
+                    )}
+                    {dateFrom && (
+                      <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-300 px-3 py-1">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        من: {dateFrom}
+                      </Badge>
+                    )}
+                    {dateTo && (
+                      <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-300 px-3 py-1">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        إلى: {dateTo}
+                      </Badge>
+                    )}
+                    {statusFilter && (
+                      <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-300 px-3 py-1">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {statusFilter === 'with_location' && 'مع بيانات موقع'}
+                        {statusFilter === 'at_assigned_branch' && 'في الفرع المخصص'}
+                        {statusFilter === 'outside_branch' && 'خارج الفرع المخصص'}
+                        {statusFilter === 'no_location' && 'بدون بيانات موقع'}
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {attendances.length > 0 ? (
-            <div className="space-y-4">
-                {attendances.map((attendance) => (
-                  <Card key={attendance.id} className="gradient-card shadow-soft border-border/50">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                          <div className="p-3 bg-primary/10 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style={{ direction: 'rtl' }}>
+                {attendances.map((attendance, index) => (
+                  <Card key={attendance.id} className="gradient-card shadow-soft border-border/50 hover:shadow-xl transition-all duration-300 overflow-hidden" style={{
+                    direction: 'rtl',
+                    textAlign: 'right',
+                    unicodeBidi: 'bidi-override'
+                  }}>
+                    {/* Card Header - Employee Info and Status */}
+                    <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-4 border-b border-border/30" style={{ direction: 'rtl' }}>
+                      <div className="flex items-center justify-between mb-3" style={{ flexDirection: 'row-reverse' }}>
+                        {/* Employee Avatar and Name */}
+                        <div className="flex items-center gap-3" style={{ flexDirection: 'row-reverse' }}>
+                          <div className="p-3 bg-primary/20 rounded-full border-2 border-primary/30">
                             <User className="h-6 w-6 text-primary" />
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-3">
-                              <h3 className="font-semibold text-lg">{attendance.employee.name}</h3>
+                          <div style={{ textAlign: 'right', flex: 1 }}>
+                            <h3 className="font-bold text-xl text-foreground" style={{ textAlign: 'right' }}>{attendance.employee.name}</h3>
+                            <div className="flex items-center gap-2 mt-1" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
                               {getAttendanceStatus(attendance)}
                               {getStatusBadge(attendance.status)}
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {attendance.date}
-                              </span>
-                              {attendance.employee.department && (
-                                <span>{attendance.employee.department.name}</span>
-                              )}
-                              {attendance.employee.position && (
-                                <span>{attendance.employee.position.title}</span>
-                              )}
+                          </div>
+                        </div>
+
+                        {/* Location Warning Badge */}
+                        {attendance.location?.checkout_is_at_assigned_branch === false && (
+                          <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 px-3 py-2 rounded-full border border-orange-200 font-medium" style={{ flexDirection: 'row-reverse' }}>
+                            <span>خارج الفرع</span>
+                            <AlertTriangle className="h-4 w-4" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Employee Meta Information */}
+                      <div className="flex flex-wrap gap-2" style={{ justifyContent: 'flex-end' }}>
+                        {attendance.employee.department && (
+                          <span className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full text-blue-700 text-sm" style={{ flexDirection: 'row-reverse' }}>
+                            <span className="font-medium">{attendance.employee.department.name}</span>
+                            <Building2 className="h-3 w-3" />
+                          </span>
+                        )}
+                        {attendance.employee.position && (
+                          <span className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full text-green-700 text-sm" style={{ flexDirection: 'row-reverse' }}>
+                            <span className="font-medium">{attendance.employee.position.title}</span>
+                            <User className="h-3 w-3" />
+                          </span>
+                        )}
+                        {attendance.employee.branch && (
+                          <span className="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full text-purple-700 text-sm" style={{ flexDirection: 'row-reverse' }}>
+                            <span className="font-medium">{attendance.employee.branch.name}</span>
+                            <Home className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <CardContent className="p-0" style={{ direction: 'rtl' }}>
+                      {/* Date and Time Section */}
+                      <div className="p-4 bg-muted/30" style={{ direction: 'rtl' }}>
+                        <div className="flex items-center gap-2 mb-3" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+                          <Calendar className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-foreground">{attendance.date}</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {/* Check-in Time */}
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                            <div className="flex items-center justify-center gap-2 mb-2" style={{ flexDirection: 'row-reverse' }}>
+                              <span className="text-sm font-medium text-green-700">تسجيل الدخول</span>
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </div>
+                            <div className="text-lg font-bold text-green-800">
+                              {attendance.check_in_time ?
+                                new Date(attendance.check_in_time).toLocaleTimeString('ar-SA', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                }) :
+                                'لم يسجل'
+                              }
+                            </div>
+                          </div>
+
+                          {/* Check-out Time */}
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                            <div className="flex items-center justify-center gap-2 mb-2" style={{ flexDirection: 'row-reverse' }}>
+                              <span className="text-sm font-medium text-blue-700">تسجيل الخروج</span>
+                              <Clock className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div className="text-lg font-bold text-blue-800">
+                              {attendance.check_out_time ?
+                                new Date(attendance.check_out_time).toLocaleTimeString('ar-SA', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                }) :
+                                'لم يسجل'
+                              }
+                            </div>
+                          </div>
+
+                          {/* Total Hours */}
+                          <div className="bg-primary/10 border border-primary/200 rounded-lg p-3 text-center">
+                            <div className="flex items-center justify-center gap-2 mb-2" style={{ flexDirection: 'row-reverse' }}>
+                              <span className="text-sm font-medium text-primary">إجمالي الساعات</span>
+                              <BarChart3 className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="text-lg font-bold text-primary">
+                              {attendance.total_hours ? `${attendance.total_hours} ساعة` : 'غير محدد'}
                             </div>
                           </div>
                         </div>
-                        <div className="text-right space-y-2">
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">تسجيل الدخول:</span>
-                            <span className="mr-2 font-medium">
-                              {attendance.check_in_time || 'لم يسجل'}
-                            </span>
+                      </div>
+
+                      {/* Enhanced Location Information */}
+                      {attendance.location && (
+                        <div className="p-4 border-b border-border/30" style={{ direction: 'rtl' }}>
+                          <h4 className="font-semibold text-lg mb-3 flex items-center gap-2" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+                            <MapPin className="h-5 w-5 text-primary" />
+                            معلومات الموقع
+                          </h4>
+                          {renderLocationInfo(attendance)}
+                        </div>
+                      )}
+
+                      {/* Notes Section */}
+                      {attendance.notes && (
+                        <div className="p-4 border-b border-border/30" style={{ direction: 'rtl' }}>
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2" style={{ justifyContent: 'flex-end', flexDirection: 'row-reverse' }}>
+                              <AlertCircle className="h-4 w-4 text-yellow-600" />
+                              <span className="font-medium text-yellow-700">ملاحظات</span>
+                            </div>
+                            <div className="text-sm text-yellow-800" style={{ textAlign: 'right' }}>{attendance.notes}</div>
                           </div>
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">تسجيل الخروج:</span>
-                            <span className="mr-2 font-medium">
-                              {attendance.check_out_time || 'لم يسجل'}
-                            </span>
-                          </div>
-                          {attendance.total_hours && (
-                            <div className="text-sm">
-                              <span className="text-muted-foreground">إجمالي الساعات:</span>
-                              <span className="mr-2 font-medium text-primary">
-                                {attendance.total_hours} ساعة
-                              </span>
-                            </div>
-                          )}
-                    </div>
-                  </div>
-                  
-                      {/* Location and Notes */}
-                      {(attendance.latitude || attendance.notes) && (
-                        <div className="mt-4 pt-4 border-t border-border/50 space-y-2">
-                          {attendance.latitude && attendance.longitude && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <MapPin className="h-4 w-4" />
-                              <span>
-                                {attendance.location?.name || 'موقع محدد'}
-                                ({formatCoordinate(attendance.latitude)}, {formatCoordinate(attendance.longitude)})
-                              </span>
-                            </div>
-                          )}
-                          {attendance.notes && (
-                            <div className="text-sm text-muted-foreground">
-                              <span className="font-medium">ملاحظات:</span> {attendance.notes}
-                            </div>
-                          )}
                         </div>
                       )}
 
                       {/* Action Buttons */}
-                      <div className="flex gap-2 mt-4 pt-4 border-t border-border/50">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditAttendance(attendance)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteAttendance(attendance.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div className="p-4 bg-muted/20" style={{ direction: 'rtl' }}>
+                        <div className="flex gap-2" style={{ justifyContent: 'flex-start', flexDirection: 'row-reverse' }}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditAttendance(attendance)}
+                            className="flex items-center gap-2"
+                            style={{ flexDirection: 'row-reverse' }}
+                          >
+                            <Edit className="h-4 w-4" />
+                            تعديل
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-destructive hover:text-destructive flex items-center gap-2"
+                            onClick={() => handleDeleteAttendance(attendance.id)}
+                            style={{ flexDirection: 'row-reverse' }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            حذف
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -522,7 +958,7 @@ const getStatusBadge = (status: string) => {
                   {searchTerm || selectedEmployee || dateFrom || dateTo || statusFilter
                     ? 'لا توجد نتائج للفلاتر المحددة'
                     : 'لا توجد سجلات حضور حالياً'}
-                    </div>
+                </div>
                 {(searchTerm || selectedEmployee || dateFrom || dateTo || statusFilter) && (
                   <Button
                     variant="outline"
@@ -532,7 +968,7 @@ const getStatusBadge = (status: string) => {
                     مسح الفلاتر
                   </Button>
                 )}
-                    </div>
+              </div>
             )}
 
             {/* Pagination */}
@@ -633,30 +1069,8 @@ const getStatusBadge = (status: string) => {
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
-            </div>
+              </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="mobile" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Smartphone className="h-4 w-4" />
-                  محاكاة تطبيق الهاتف المحمول
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  اختبر وظائف التطبيق المحمول للحضور والانصراف
-                </p>
-                <Button
-                  onClick={() => setIsMobileSimulatorOpen(true)}
-                  className="w-full"
-                >
-                  فتح محاكي التطبيق
-                </Button>
-          </CardContent>
-        </Card>
           </TabsContent>
         </Tabs>
 

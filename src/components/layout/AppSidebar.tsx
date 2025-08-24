@@ -30,7 +30,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
-const mainItems = [
+interface NavItem {
+  title: string
+  url: string
+  icon: any
+  external?: boolean
+}
+
+const mainItems: NavItem[] = [
   { title: "لوحة التحكم", url: "/", icon: LayoutDashboard },
   { title: "إدارة الموظفين", url: "/employees", icon: Users },
   { title: "إدارة الأقسام", url: "/departments", icon: Building2 },
@@ -39,16 +46,16 @@ const mainItems = [
   { title: "جدولة المناوبات", url: "/shifts", icon: Calendar },
 ]
 
-const logisticsItems = [
+const logisticsItems: NavItem[] = [
   { title: "جدولة الشحن", url: "/cargo-schedule", icon: Truck },
   { title: "إدارة الطرود", url: "/packages", icon: Package },
 ]
 
-const businessItems = [
+const businessItems: NavItem[] = [
   { title: "المرتبات", url: "/payroll", icon: DollarSign },
   { title: "التقارير", url: "/reports", icon: FileText },
   { title: "الإشعارات", url: "/notifications", icon: Bell },
-  { title: "الإعدادات", url: "/settings", icon: Settings },
+  { title: "إعدادات الموارد البشرية", url: "", icon: Settings, external: true },
 ]
 
 export function AppSidebar() {
@@ -138,14 +145,26 @@ export function AppSidebar() {
               {businessItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end
-                      className={getNavCls}
-                    >
-                      {!collapsed && <span className="text-right flex-1">{item.title}</span>}
-                      <item.icon className="mr-2 h-4 w-4" />
-                    </NavLink>
+                    {item.external ? (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={getNavCls({ isActive: false })}
+                      >
+                        {!collapsed && <span className="text-right flex-1">{item.title}</span>}
+                        <item.icon className="mr-2 h-4 w-4" />
+                      </a>
+                    ) : (
+                      <NavLink
+                        to={item.url}
+                        end
+                        className={getNavCls}
+                      >
+                        {!collapsed && <span className="text-right flex-1">{item.title}</span>}
+                        <item.icon className="mr-2 h-4 w-4" />
+                      </NavLink>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

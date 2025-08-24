@@ -57,7 +57,7 @@
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(0 0% 98%));
     --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.08);
     --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.12);
-    
+
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -148,6 +148,30 @@
   }
 
   [data-side="right"] .sidebar-content {
+    direction: ltr;
+  }
+
+  /* Map marker styles */
+  .custom-div-icon {
+    background: transparent;
+    border: none;
+  }
+
+  .custom-div-icon div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+  }
+
+  /* Leaflet map container adjustments for RTL */
+  .leaflet-container {
+    direction: ltr;
+  }
+
+  .leaflet-control-attribution {
     direction: ltr;
   }
 }

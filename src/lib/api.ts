@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'https://guba-sy.com/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://192.168.1.109:8000/api',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -90,6 +90,12 @@ export const hrEmployeesAPI = {
 
     delete: async (id: string) => {
         const response = await api.delete(`/hr/employees/${id}`);
+        return response.data;
+    },
+
+    // Get employee registration statistics
+    getRegistrationStats: async (params?: any) => {
+        const response = await api.get('/hr/employees/registration-stats', { params });
         return response.data;
     },
 };
@@ -191,6 +197,13 @@ export const hrAttendanceAPI = {
     getEmployeeHistory: async (employeeId: string, params?: any) => {
         const response = await api.get('/hr/attendance/history', {
             params: { employee_id: employeeId, ...params }
+        });
+        return response.data;
+    },
+
+    getBranchInfo: async (employeeId: string) => {
+        const response = await api.get('/hr/attendance/branch-info', {
+            params: { employee_id: employeeId }
         });
         return response.data;
     },
