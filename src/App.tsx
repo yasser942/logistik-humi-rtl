@@ -11,6 +11,8 @@ import Employees from "./pages/Employees";
 import Attendance from "./pages/Attendance";
 import Departments from "./pages/Departments";
 import Positions from "./pages/Positions";
+import LocationTracking from "./pages/LocationTracking";
+import LocationSettings from "./pages/LocationSettings";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -57,6 +59,16 @@ const App = () => (
             <Route path="/positions" element={
               <ProtectedRoute requiredPermissions={['can_manage_positions']}>
                 <Positions />
+              </ProtectedRoute>
+            } />
+            <Route path="/location-tracking" element={
+              <ProtectedRoute requiredPermissions={['can_manage_attendance']}>
+                <LocationTracking />
+              </ProtectedRoute>
+            } />
+            <Route path="/location-settings" element={
+              <ProtectedRoute requiredPermissions={['can_manage_attendance']}>
+                <LocationSettings />
               </ProtectedRoute>
             } />
             <Route path="/shifts" element={

@@ -12,7 +12,9 @@ import {
   Settings,
   Truck,
   Package,
-  LogOut
+  LogOut,
+  MapPin,
+  Target
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
@@ -44,6 +46,8 @@ const mainItems: NavItem[] = [
   { title: "إدارة المناصب", url: "/positions", icon: Briefcase },
   { title: "الحضور والانصراف", url: "/attendance", icon: Clock },
   { title: "جدولة المناوبات", url: "/shifts", icon: Calendar },
+  { title: "تتبع المواقع", url: "/location-tracking", icon: MapPin },
+  { title: "إعدادات التتبع", url: "/location-settings", icon: Target },
 ]
 
 const logisticsItems: NavItem[] = [

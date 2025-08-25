@@ -2,9 +2,8 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-
-    baseURL: import.meta.env.VITE_API_URL || 'https://guba-sy.com/api',
     //baseURL: import.meta.env.VITE_API_URL || 'http://192.168.1.109:8000/api',
+    baseURL: import.meta.env.VITE_API_URL || 'https://guba-sy.com/api',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -264,6 +263,63 @@ export const hrLeaveRequestsAPI = {
 
     reject: async (id: string, data: any) => {
         const response = await api.post(`/hr/leave-requests/${id}/reject`, data);
+        return response.data;
+    },
+};
+
+// HR Location Tracking API
+export const hrLocationAPI = {
+    // Get location tracking settings
+    getSettings: async () => {
+        const response = await api.get('/hr/location/settings');
+        return response.data;
+    },
+
+    // Update location tracking settings
+    updateSettings: async (data: any) => {
+        const response = await api.put('/hr/location/settings', data);
+        return response.data;
+    },
+
+    // Get active employees with location tracking
+    getActiveEmployees: async () => {
+        const response = await api.get('/hr/location/active-employees');
+        return response.data;
+    },
+
+    // Get location analytics
+    getAnalytics: async (params?: any) => {
+        const response = await api.get('/hr/location/analytics', { params });
+        return response.data;
+    },
+
+    // Get location history for a specific employee
+    getLocationHistory: async (employeeId: string, params?: any) => {
+        const response = await api.get(`/hr/location/history/${employeeId}`, { params });
+        return response.data;
+    },
+
+    // Start tracking for an employee
+    startTracking: async (employeeId: string) => {
+        const response = await api.post('/hr/location/start-tracking', { employee_id: employeeId });
+        return response.data;
+    },
+
+    // Stop tracking for an employee
+    stopTracking: async (employeeId: string) => {
+        const response = await api.post('/hr/location/stop-tracking', { employee_id: employeeId });
+        return response.data;
+    },
+
+    // Update location (for mobile app)
+    updateLocation: async (data: any) => {
+        const response = await api.post('/hr/location/update', data);
+        return response.data;
+    },
+
+    // Get current location for an employee
+    getCurrentLocation: async (employeeId: string) => {
+        const response = await api.get(`/hr/location/current/${employeeId}`);
         return response.data;
     },
 };
